@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -30,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -37,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import com.estiven.dicerollerapp.ui.theme.DiceRollerAppTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.sin
 import kotlin.random.Random
 
 val DiceColors = mapOf(
@@ -88,10 +92,18 @@ fun DiceRollScreen(modifier: Modifier = Modifier) {
         label = "diceRotationAnimation"
     )
 
+    //Estado 3D Animatable para controlar el progreso de la animación
+    val rotationProgress = remember { Animatable(0f) }
+
+    //Valores fijos (o aleatorios) para el giro final en 3 ejes
+    var targetRotations by remember { mutableStateOf(Triple(0f, 0f, 0f)) } // X, Y, Z
+
     //Logica para lanzar el dado (Función suspendida para usar 'delay')
     fun rollDice() {
         if (isRolling) return //Ignora si ya esta rodando
         isRolling = true
+        //performVibration(50)
+
         //Lanzamos una corrutina para manejar el tiempo de rodaje
         coroutineScope.launch {
             //Simulación de animación (Rodaje rápido en números)
@@ -100,6 +112,24 @@ fun DiceRollScreen(modifier: Modifier = Modifier) {
                 rotationAngle = Random.nextFloat() * 360f //Gira a un angulo aleatorio
                 delay(150)
             }
+            // Calcular las rotaciones Finales (que seran gigantes para simular el giro)
+            // Esto asegura que el dado gire muchas veces de forma caótica
+            targetRotations = Triple(
+                Random.nextFloat() * 1080 + 720f, // De 2 a 5 vueltas en X
+                Random.nextFloat() * 1080 + 720f, // De 2 a 5 vueltas en Y
+                Random.nextFloat() * 1080 + 720f // De 2 a 5 vueltas Z
+            )
+
+            // Ejecutar la animación del dado
+            rotationProgress.animateTo(
+                targetValue = 1f, //Mueve el progreso 0f a 1f
+                animationSpec = tween(
+                    durationMillis = 3000, // Duración de la animación (3 segundos)
+                    easing = FastOutSlowInEasing //Un buen ritmo de animación
+                )
+            )
+
+            //Finalizar animación
 
             //Añadir una ultima rotación antes de la pausa final
             rotationAngle = Random.nextFloat() * 360f
@@ -111,12 +141,34 @@ fun DiceRollScreen(modifier: Modifier = Modifier) {
             //Calculamos el número final antes del retraso para que el fondo se actualice pronto
             val finalNumber = Random.nextInt(1,7)
 
+            //perfomVibration(200)
+
+            // Reiniciar el progreso para la proxima tirada y actualizar el numero final
+            rotationProgress.snapTo(0f) // Detiene la animación instantáneamente para el reposo
+            targetRotations = Triple(0f, 0f, 0f) // Reposición en (0,0,0)
+            isRolling = false
+
             //Muestra el número final y detiene la aniamción
             rotationAngle = 0f //Restablece el ángulo al final para que el dado "se asiente"
             diceNumber = finalNumber
             isRolling = false
         }
     }
+
+    //Calculo de valores animados
+    // El valor 0.0f del Animatable representa el inicio, 1.0f representa el final de los 3s
+    val progress = rotationProgress.value
+
+    //Rotaciones
+    var rotationX = targetRotations.first * progress // Rotacion en X animado
+    var rotationY = targetRotations.second * progress // Rotación en Y animado
+    var rotationZ = targetRotations.third * progress // Rotación en Z animado
+
+    // Escala (Efecto de acercarse/alejarse) durante el lanzamiento
+    val scale = (0.9f + 0.1f * sin(progress * Math.PI).toFloat()) //Hace que se agrande un poco al centro
+
+    // Transparencia (alpha) para una transición suave
+    var alpha = 0.5f + 0.5f + progress
 
     //-----------------Estructura de la UI (Interfaz de Usuario)
 
@@ -143,16 +195,29 @@ fun DiceRollScreen(modifier: Modifier = Modifier) {
             painter = painterResource(id = imageResource), //Aqui usamos la imagen que agregastes
             contentDescription = "Dado mostrando el número $diceNumber",
             modifier = Modifier
-                .size(250.dp)
+                .size(200.dp)
                 //Aquí se aplica la animación de la rotación
-                .rotate(animatedRotation) //Usa el valor animado de rotación
+                .graphicsLayer {
+                    cameraDistance = 12f * density
+                    //Distancia de la camara
+                    this.rotationX = rotationX
+                    this.rotationY = rotationY
+                    this.rotationZ = rotationZ //Intercambio de los ejes para un giro mas interesante
+
+                    cameraDistance = 12f * density
+                    scaleX = scale
+                    scaleY = scale
+
+                    alpha = if (isRolling) 1f else 1f //Mantiene la opacidad
+                }
+                //.rotate(animatedRotation) //Usa el valor animado de rotación
                 .shadow(
-                    elevation = 16.dp, //Intensidad de la sombra
+                    elevation = 24.dp, //Intensidad de la sombra
                     shape = RoundedCornerShape(20.dp), // Forma de la sombra
                     spotColor = Color.Black //Color de la sombra
                 )
                 .border(
-                    width = 5.dp, //Ancho del borde
+                    width = 4.dp, //Ancho del borde
                     color = Color.DarkGray.copy(alpha = 0.5f), //Color del borde
                     shape = RoundedCornerShape(20.dp) //Forma del borde
                 )
