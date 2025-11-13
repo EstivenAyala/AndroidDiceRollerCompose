@@ -10,19 +10,22 @@
 
     <path
         android:fillColor="#000000"
-        android:pathData="M780,240a90,90 0,1 0,-180 0a90,90 0,1 0,180 0z"/>
-    <path
-        android:fillColor="#000000"
         android:pathData="M180,240a90,90 0,1 0,180 0a90,90 0,1 0,-180 0z"/>
     <path
         android:fillColor="#000000"
-        android:pathData="M780,720a90,90 0,1 0,-180 0a90,90 0,1 0,180 0z"/>
+        android:pathData="M180,480a90,90 0,1 0,180 0a90,90 0,1 0,-180 0z"/>
     <path
         android:fillColor="#000000"
         android:pathData="M180,720a90,90 0,1 0,180 0a90,90 0,1 0,-180 0z"/>
 
     <path
         android:fillColor="#000000"
-        android:pathData="M480,480a90,90 0,1 0,180 0a90,90 0,1 0,-180 0z"/>
+        android:pathData="M780,240a90,90 0,1 0,-180 0a90,90 0,1 0,180 0z"/>
+    <path
+        android:fillColor="#000000"
+        android:pathData="M780,480a90,90 0,1 0,-180 0a90,90 0,1 0,180 0z"/>
+    <path
+        android:fillColor="#000000"
+        android:pathData="M780,720a90,90 0,1 0,-180 0a90,90 0,1 0,180 0z"/>
 
 </vector>
